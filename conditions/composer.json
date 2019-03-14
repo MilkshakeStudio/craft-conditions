@@ -1,0 +1,43 @@
+{
+    "name": "craftconditions/conditions",
+    "description": "conditions on fields",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "conditions"
+    ],
+    "support": {
+        "docs": "???",
+        "issues": "???"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "W3care",
+            "homepage": "http://mobile.everybyte.in/"
+        }
+    ],
+    "require": {
+        "craftcms/cms": "^3.0.0-RC1"
+    },
+    "autoload": {
+        "psr-4": {
+          "craftconditions\\conditions\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "Conditions",
+        "handle": "conditions",
+        "hasCpSettings": false,
+        "hasCpSection": false,
+        "changelogUrl": "???",
+        "components": {
+            "conditionsService": "craftconditions\\conditions\\services\\ConditionsService"
+        },
+        "class": "craftconditions\\conditions\\Conditions"
+    }
+}
