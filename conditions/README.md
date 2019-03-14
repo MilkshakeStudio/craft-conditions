@@ -1,8 +1,11 @@
+<div style='text-align:center;'>
+![Screenshot](resources/img/plugin-logo.png)
+</div>
 # Conditions plugin for Craft CMS 3.x
 
-conditions on fields
+Conditions is a plugin that allows you to hide fields on entries if a specific criteria is hit.  
 
-![Screenshot](resources/img/plugin-logo.png)
+
 
 ## Requirements
 
@@ -24,7 +27,6 @@ To install the plugin, follow these instructions.
 
 ## Conditions Overview
 
-Conditions is a plugin that allows you to hide fields on entries if a specific criteria is hit.  
 
 ## Configuring Conditions
 
