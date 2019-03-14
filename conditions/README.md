@@ -1,5 +1,7 @@
 <div style='text-align:center;'>
+
 ![Screenshot](resources/img/plugin-logo.png)
+
 </div>
 # Conditions plugin for Craft CMS 3.x
 
