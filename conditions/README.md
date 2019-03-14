@@ -24,20 +24,15 @@ To install the plugin, follow these instructions.
 
 ## Conditions Overview
 
--Insert text here-
+Conditions is a plugin that allows you to hide fields on entries if a specific criteria is hit.  
 
 ## Configuring Conditions
 
--Insert text here-
+
 
 ## Using Conditions
 
--Insert text here-
+
 
 ## Conditions Roadmap
 
-Some things to do, and ideas for potential features:
-
-* Release it
-
-Brought to you by [W3care](http://mobile.everybyte.in/)
