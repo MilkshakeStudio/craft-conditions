@@ -4,8 +4,8 @@
  *
  * conditions on fields
  *
- * @link      http://mobile.everybyte.in/
- * @copyright Copyright (c) 2019 W3care
+* @link      http://milkshake.stidio
+ * @copyright Copyright (c) 2019 Milkshake Studio
  */
 
 namespace craftconditions\conditions\services;
@@ -25,7 +25,7 @@ use craftconditions\conditions\records\ConditionalsRecord as ConditionalsRecord;
  *
  * https://craftcms.com/docs/plugins/services
  *
- * @author    W3care
+ * @author    Milkshake Studio
  * @package   Conditions
  * @since     1.0.0
  */
@@ -55,8 +55,7 @@ class ConditionsService extends Component
      * @return bool
      * @throws \Exception
      */
-	
-     public function saveConditionals( $model)
+     public function save( $model)
     {
 		$record1 = new ConditionalsRecord();
 		$result = $record1->find()->where(array('fieldLayoutId'=>$model->fieldLayoutId))->all();
@@ -64,12 +63,12 @@ class ConditionsService extends Component
 		{
 			$row->delete();
 		}
-		if($model->conditionals != "")
+		if($model->expressions != "")
 		{
 			$record = new ConditionalsRecord();
 			$record->find()->where(array('fieldLayoutId'=>$model->fieldLayoutId))->all();
 			$record->fieldLayoutId = $model->fieldLayoutId;
-			$record->conditionals = $model->conditionals;
+			$record->expressions = $model->expressions;
 			$record->validate();
 			$record->save();
 			return true;

@@ -4,8 +4,8 @@
  *
  * conditions on fields
  *
- * @link      http://mobile.everybyte.in/
- * @copyright Copyright (c) 2019 W3care
+* @link      http://milkshake.stidio
+ * @copyright Copyright (c) 2019 Milkshake Studio
  */
 
 namespace craftconditions\conditions;
@@ -45,7 +45,7 @@ use yii\base\Event;
  *
  * https://craftcms.com/docs/plugins/introduction
  *
- * @author    W3care
+ * @author    Milkshake Studio
  * @package   Conditions
  * @since     1.0.0
  *
@@ -146,27 +146,142 @@ class Conditions extends Plugin
             __METHOD__
         );
 		if (Craft::$app->getRequest()->getIsAjax()) {
-            $this->ajaxProcessInit();
+            $this->ProcessAfterLoad();
         } else {
 
             $this->includeAssets();
             Craft::$app->view->registerJs('if (window.Craft && window.Craft.ConditionsPlugin) {
-                Craft.ConditionsPlugin.init('.$this->getData().');
+                Craft.ConditionsPlugin.init('.$this->jsonToJs().');
             }');
 			Event::on(Fields::class, Fields::EVENT_BEFORE_SAVE_FIELD_LAYOUT, function(Event $event) {
-				
 				$this->onSaveConditionalLayout($event);
 			});
         }
     }
-	/*
-    *   Protected methods
-    *
-    */
-    /**
-     * @return bool
+	 /**
+     * include Javascript and css Assets
      */
-    protected function ajaxProcessInit()
+    protected function includeAssets()
+    {
+		$this->view->registerAssetBundle(ConditionsAssets::class);
+	}
+	
+
+    /**
+     * @return string
+     */
+    protected function jsonToJs()
+    {
+       $data = array(
+                'expressions' => $this->getConditionalObj(),
+		    	'fldIds' => $this->getFieldIds(),
+                'conditionalFieldTypes' => $this->getAllConditionalFieldTypes(),
+                'conditionalFields' => $this->getAllConditionalFields(),
+        );
+        return json_encode($data);
+    }
+
+    /**
+     * @return array
+     */
+    protected function getConditionalObj()
+    {
+        $resources = array();
+        $sources = array();
+       
+		// Get Asset volumes
+		$allAssetSources = Craft::$app->getVolumes()->getAllVolumes();
+		
+		if(!empty($allAssetSources))
+		{
+			foreach ($allAssetSources as $assetSource) {
+				$sources['assetSource:' . $assetSource->id] = $assetSource->fieldLayoutId;
+			}
+		}
+
+        // Get Tag groups
+        $allTagGroups = Craft::$app->tags->getAllTagGroups();
+        foreach ($allTagGroups as $tagGroup) {
+            $sources['tagGroup:' . $tagGroup->id] = $tagGroup->fieldLayoutId;
+        }
+      
+		// Get all Entry types records
+		
+        $entryTypeRecords = EntryTypeRecord::find()->all();
+		
+        if ($entryTypeRecords) {
+            foreach ($entryTypeRecords as $entryType) {
+                $sources['entryType:' . $entryType->id] = $entryType->fieldLayoutId;
+                $sources['section:' . $entryType->sectionId] = $entryType->fieldLayoutId;
+            }
+        }
+		
+			
+        // Get Global sets
+        $allGlobalSets = Craft::$app->globals->getAllSets();
+        foreach ($allGlobalSets as $globalSet) {
+            $sources['globalSet:' . $globalSet->id] = $globalSet->fieldLayoutId;
+        }
+			
+        // Get Category groups
+        $allCategoryGroups = Craft::$app->categories->getAllGroups();
+        foreach ($allCategoryGroups as $categoryGroup) {
+            $sources['categoryGroup:' . $categoryGroup->id] = $categoryGroup->fieldLayoutId;
+        }
+	
+
+        // Retrive Users Field Layout 
+		$usersFieldLayout = Craft::$app->fields->getLayoutByType('craft\elements\User');
+		
+		
+		
+        if ($usersFieldLayout) {
+            $sources['users'] = $usersFieldLayout->id;
+        }
+	
+      
+        // Get conditionals Array
+        $conArr = array();
+		$tableSchema = Craft::$app->db->schema->getTableSchema('{{%conditions_conditionalsrecord}}');
+        if ($tableSchema != null)
+		{
+			$conditionalsRecords = ConditionalsRecord::find()->all();
+			if ($conditionalsRecords) {
+				foreach ($conditionalsRecords as $conditionalsRecord) {
+					$conditionalsModel = $conditionalsRecord;
+					if ($conditionalsModel->expressions && $conditionalsModel->expressions != '') {
+						$conArr['fieldLayout:' . $conditionalsModel->fieldLayoutId] = $conditionalsModel->expressions;
+					}
+				}
+			}
+		}
+        // Conditionals to origin mapping
+        foreach ($sources as $sourceId => $fieldLayoutId) {
+            if (isset($conArr['fieldLayout:' . $fieldLayoutId])) {
+                $resources[$sourceId] = $conArr['fieldLayout:' . $fieldLayoutId];
+            }
+        }
+        return $resources;
+
+    }
+	/**
+     * @param Event $event
+     */
+    public function onSaveConditionalLayout(Event $event)
+    {
+		
+		$fldLayout = $event->layout;
+		$cndlModel = new ConditionalsModel();
+		$cndlModel->fieldLayoutId = $fldLayout->id;
+
+		$cndlModel->expressions = Craft::$app->getRequest()->getBodyParam('_conditions');
+		$conditionsService = new ConditionsService();
+		$conditionsService->save($cndlModel);
+	}
+	/**
+     * @return bool Ajax
+     */
+    protected function ProcessAfterLoad()
     {
 
         if (!Craft::$app->getRequest()->getIsPost()) {
@@ -179,7 +294,7 @@ class Conditions extends Plugin
         switch ($actionSegment) {
 
             case 'switch-entry-type' :
-                Craft::$app->view->registerJs('Craft.ConditionsPlugin.initPrimaryForm();');
+                Craft::$app->view->registerJs('Craft.ConditionsPlugin.FormLoad();');
                 break;
 
             case 'get-editor-html' :
@@ -190,201 +305,49 @@ class Conditions extends Plugin
                 $elementType = $element ?Craft::$app->getElements()->getElementTypeById($elementId) : Craft::$app->getRequest()->getBodyParam('elementType');
                 $attributes =  Craft::$app->getRequest()->getBodyParam('attributes');
 
-                $conditionalsKey = null;
+                $entityType = null;
 
                 switch ($elementType) {
 
                     case 'craft\elements\Entry' :
                         if ($element) {
-                            $conditionalsKey = 'entryType:' . $element->type->id;
+                            $entityType = 'entryType:' . $element->type->id;
                         } else if (isset($attributes['typeId'])) {
-                            $conditionalsKey = 'entryType:' . $attributes['typeId'];
+                            $entityType = 'entryType:' . $attributes['typeId'];
                         } else if (isset($attributes['sectionId'])) {
                             $entryTypes = Craft::$app->sections->getEntryTypesBySectionId((int)$attributes['sectionId']);
                             $entryType = $entryTypes ? array_shift($entryTypes) : false;
-                            $conditionalsKey = $entryType ? 'entryType:' . $entryType->id : null;
+                            $entityType = $entryType ? 'entryType:' . $entryType->id : null;
                         }
                         break;
 
                     case 'craft\elements\GlobalSet' :
-                        $conditionalsKey = $element ? 'globalSet:' . $element->id : null;
+                        $entityType = $element ? 'globalSet:' . $element->id : null;
                         break;
 
                     case 'craft\elements\Asset' :
 						
-                        $conditionalsKey = $element ? 'assetSource:' . $element->volumeId : null;
+                        $entityType = $element ? 'assetSource:' . $element->volumeId : null;
                         break;
 
                     case 'craft\elements\Category' :
-                        $conditionalsKey = $element ? 'categoryGroup:' . $element->group->id : null;
+                        $entityType = $element ? 'categoryGroup:' . $element->group->id : null;
                         break;
 
                     case 'craft\elements\Tag' :
-                        $conditionalsKey = $element ? 'tagGroup:' . $element->group->id : null;
+                        $entityType = $element ? 'tagGroup:' . $element->group->id : null;
                         break;
 
                     case 'craft\elements\User' :
-                        $conditionalsKey = 'users';
+                        $entityType = 'users';
                         break;
                 }
 				
-                if ($conditionalsKey) {
-                    Craft::$app->view->registerJs('Craft.ConditionsPlugin.initElementEditor("' . $conditionalsKey . '");');
+                if ($entityType) {
+                    Craft::$app->view->registerJs('Craft.ConditionsPlugin.ElementEditorLoad("' . $entityType . '");');
                 }
                 break;
         }
-    }
-
-    /**
-     *
-     */
-    protected function includeAssets()
-    {
-		$this->view->registerAssetBundle(ConditionsAssets::class);
-	}
-
-    /**
-     * @return string
-     */
-    protected function getData()
-    {
-       $data = array(
-                'conditionals' => $this->getConditionalObj(),
-                'toggleFieldTypes' => $this->getAllToggleFieldTypes(),
-                'toggleFields' => $this->getAllToggleFields(),
-                'fieldIds' => $this->getFieldIds(),
-        );
-        return json_encode($data);
-    }
-
-    /**
-     * @return array
-     */
-    protected function getConditionalObj()
-    {
-        $resources = array();
-        $sources = array();
-        // Entry types
-		
-        $entryTypeRecords = EntryTypeRecord::find()->all();
-		
-        if ($entryTypeRecords) {
-            foreach ($entryTypeRecords as $entryType) {
-                $sources['entryType:' . $entryType->id] = $entryType->fieldLayoutId;
-                $sources['section:' . $entryType->sectionId] = $entryType->fieldLayoutId;
-            }
-        }
-
-        // Category groups
-        $allCategoryGroups = Craft::$app->categories->getAllGroups();
-        foreach ($allCategoryGroups as $categoryGroup) {
-            $sources['categoryGroup:' . $categoryGroup->id] = $categoryGroup->fieldLayoutId;
-        }
-
-        // Tag groups
-        $allTagGroups = Craft::$app->tags->getAllTagGroups();
-        foreach ($allTagGroups as $tagGroup) {
-            $sources['tagGroup:' . $tagGroup->id] = $tagGroup->fieldLayoutId;
-        }
-
-        // Asset sources
-		$allAssetSources = Craft::$app->getVolumes()->getAllVolumes();
-		
-		if(!empty($allAssetSources))
-		{
-			foreach ($allAssetSources as $assetSource) {
-				$sources['assetSource:' . $assetSource->id] = $assetSource->fieldLayoutId;
-			}
-		}
-		
-        // Global sets
-        $allGlobalSets = Craft::$app->globals->getAllSets();
-        foreach ($allGlobalSets as $globalSet) {
-            $sources['globalSet:' . $globalSet->id] = $globalSet->fieldLayoutId;
-        }
-
-        // Users Field Layout 
-		$usersFieldLayout = Craft::$app->fields->getLayoutByType('craft\elements\User');
-		
-		
-		
-        if ($usersFieldLayout) {
-            $sources['users'] = $usersFieldLayout->id;
-        }
-	
-        // Solspace Calendar
-        $solspaceCalendarPlugin = Craft::$app->plugins->getPlugin('calendar');
-        if ($solspaceCalendarPlugin && $solspaceCalendarPlugin->getDeveloper() === 'Solspace') {
-            // Before 1.7.0, Solspace Calendar used a single Field Layout for all calendars. Let's try and support both the old and the new
-            if (version_compare($solspaceCalendarPlugin->getVersion(), '1.7.0', '>=')) {
-                $solspaceCalendars = Craft::$app->calendar_calendars->getAllCalendars();
-                if ($solspaceCalendars && is_array($solspaceCalendars) && !empty($solspaceCalendars)) {
-                    foreach ($solspaceCalendars as $solspaceCalendar) {
-                        $sources['solspaceCalendar:'.$solspaceCalendar->id] = $solspaceCalendar->fieldLayoutId;
-                    }
-                }
-            } else {
-                $solspaceCalendarFieldLayout = Craft::$app->fields->getLayoutByType('Calendar_Event');
-                if ($solspaceCalendarFieldLayout) {
-                    $sources['solspaceCalendar'] = $solspaceCalendarFieldLayout->id;
-                }
-            }
-        }
-
-        // Get all conditionals
-        $conditionals = array();
-		$tableSchema = Craft::$app->db->schema->getTableSchema('{{%conditions_conditionalsrecord}}');
-        if ($tableSchema != null)
-		{
-			$conditionalsRecords = ConditionalsRecord::find()->all();
-			if ($conditionalsRecords) {
-				foreach ($conditionalsRecords as $conditionalsRecord) {
-					$conditionalsModel = $conditionalsRecord;
-					if ($conditionalsModel->conditionals && $conditionalsModel->conditionals != '') {
-						$conditionals['fieldLayout:' . $conditionalsModel->fieldLayoutId] = $conditionalsModel->conditionals;
-					}
-				}
-			}
-		}
-        // Map conditionals to sources
-        foreach ($sources as $sourceId => $fieldLayoutId) {
-            if (isset($conditionals['fieldLayout:' . $fieldLayoutId])) {
-                $resources[$sourceId] = $conditionals['fieldLayout:' . $fieldLayoutId];
-            }
-        }
-        return $resources;
-
-    }
-
-    /**
-     * @return array
-     */
-    protected function getAllToggleFieldTypes()
-    {
-        return array(
-            // Stock FieldTypes
-            'Lightswitch',
-            'Dropdown',
-            'Checkboxes',
-            'MultiSelect',
-            'RadioButtons',
-            'Number',
-            'PositionSelect',
-            'PlainText',
-            'Entries',
-            'Categories',
-            'Tags',
-            'Assets',
-            'Users',
-            // Custom FieldTypes
-            'Calendar_Event',
-            'ButtonBox_Buttons',
-            'ButtonBox_Colours',
-            'ButtonBox_Stars',
-            'ButtonBox_TextSize',
-            'ButtonBox_Width',
-			'SuperTableField'
-        );
     }
 
     /*
@@ -394,14 +357,13 @@ class Conditions extends Plugin
     /**
      * @return array
      */
-    protected function getAllToggleFields()
+    protected function getAllConditionalFields()
     {
-        $toggleFieldTypes = $this->getAllToggleFieldTypes();
+        $tgFields = array();
+        $flds = Craft::$app->fields->getAllFields();
 		
-        $toggleFields = array();
-        $fields = Craft::$app->fields->getAllFields();
-		
-        foreach ($fields as $field) {
+		$toggleFieldTypes = $this->getAllConditionalFieldTypes();
+        foreach ($flds as $field) {
 	
 			$fieldType = join('', array_slice(explode('\\', get_class($field)), -1));
 			$classHandle = $fieldType;
@@ -409,7 +371,7 @@ class Conditions extends Plugin
                 continue;
             }
             if (in_array($classHandle, $toggleFieldTypes)) {
-                $toggleFields[] = array(
+                $tgFields[] = array(
                     'id' => $field->id,
                     'handle' => $field->handle,
                     'name' => $field->name,
@@ -418,7 +380,7 @@ class Conditions extends Plugin
                 );
             }
         }
-        return $toggleFields;
+        return $tgFields;
     }
 
     /**
@@ -426,34 +388,41 @@ class Conditions extends Plugin
      */
     protected function getFieldIds()
     {
-        $handles = array();
-        $fields = Craft::$app->fields->getAllFields();
-        foreach ($fields as $field) {
-            $handles[$field->handle] = $field->id;
+        $data = array();
+        $flds = Craft::$app->fields->getAllFields();
+        foreach ($flds as $field) {
+            $data[$field->handle] = $field->id;
         }
-        return $handles;
+        return $data;
     }
-    /*
-    *   Event handlers
-    *
-    */
-    /**
-     * @param Event $e
+ 
+	 /**
+     * @return array
      */
-    public function onSaveConditionalLayout(Event $e)
+    protected function getAllConditionalFieldTypes()
     {
-		$conditionals = Craft::$app->getRequest()->getBodyParam('_conditions');
-		
-		$fieldLayout = $e->layout;
-		$conditionalsModel = new ConditionalsModel();
-		$conditionalsModel->fieldLayoutId = $fieldLayout->id;
-
-		$conditionalsModel->conditionals = Craft::$app->getRequest()->getBodyParam('_conditions');
-		$conditionsService = new ConditionsService();
-		$conditionsService->saveConditionals($conditionalsModel);
-	}
+        return array(
+			'PlainText',
+			'Number',
+            'Entries',
+			'SuperTableField',
+			'MultiSelect',
+            'Lightswitch',
+			'ButtonBox_Buttons',
+			'Tags',
+            'Dropdown',
+			'Assets',
+			'ButtonBox_Width',
+            'Checkboxes',
+			'ButtonBox_TextSize',
+			'Users',
+			'ButtonBox_Stars',
+            'RadioButtons',
+			'Calendar_Event',
+            'PositionSelect',
+            'Categories',
+            'ButtonBox_Colours', 
+        );
+    }
     
-    // Protected Methods
-    // =========================================================================
-	
 }

@@ -4,8 +4,8 @@
  *
  * Conditions
  *
- * @link      http://mobile.everybyte.in/
- * @copyright Copyright (c) 2019 Firoz Khan
+ * @link      http://milkshake.studio
+ * @copyright Copyright (c) 2019 Milkshake Studio
  */
 
 namespace craftconditions\conditions\assets;
@@ -26,7 +26,7 @@ use yii\base\Event;
  *
  * https://craftcms.com/docs/plugins/introduction
  *
- * @author    Firoz Khan
+ * @author    Milkshake Studio
  * @package   Conditions
  * @since     1.0.11
  *
@@ -81,31 +81,17 @@ class ConditionsAssets extends AssetBundle
 			GarnishAsset::class,
 			CpAsset::class,
         ];
- 		$cssFile = 'stylesheets/conditions.css';
-        $jsFile = 'javascripts/conditions.js';
-        $manifest = $this->getRevisionManifest();
-        // define the relative path to CSS/JS files that should be registered with the page
-        // when this asset bundle is registered
-		
-		$includeJsFile = $manifest ? $manifest->$jsFile : $jsFile;
-		$includeCssFile = $manifest ? $manifest->$cssFile : $cssFile;
+ 		$cssFile = 'stylesheets/conditions-btest9098.css';
+        $jsFile = 'javascripts/conditions-atest3dc3r.js';
         $this->js = [
-            $includeJsFile
+            $jsFile
         ];
 
         $this->css = [
-            $includeCssFile
+            $cssFile
         ];
 
         parent::init();
-    }
-	  protected function getRevisionManifest()
-    {
-		
-        $manifestPath = __DIR__. '/../resources/manifest.json';
-		$result = file_get_contents($manifestPath);
-		return json_decode($result);
-       // return (IOHelper::fileExists($manifestPath) && $manifest = IOHelper::getFileContents($manifestPath)) ? json_decode($manifest) : false;
     }
 
     // Protected Methods

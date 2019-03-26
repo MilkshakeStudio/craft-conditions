@@ -4,8 +4,8 @@
  *
  * conditions on fields
  *
- * @link      http://mobile.everybyte.in/
- * @copyright Copyright (c) 2019 W3care
+* @link      http://milkshake.stidio
+ * @copyright Copyright (c) 2019 Milkshake Studio
  */
 
 namespace craftconditions\conditions\records;
@@ -27,7 +27,7 @@ use craft\db\ActiveRecord;
  *
  * http://www.yiiframework.com/doc-2.0/guide-db-active-record.html
  *
- * @author    W3care
+ * @author    Milkshake Studio
  * @package   Conditions
  * @since     1.0.0
  */
@@ -61,7 +61,7 @@ class ConditionalsRecord extends ActiveRecord
     {
         return array(
 			'fieldLayoutId' => array(AttributeType::Number),
-			'conditionals' => array(AttributeType::Mixed),
+			'expressions' => array(AttributeType::Mixed),
         );
 		
     }

@@ -4,8 +4,8 @@
  *
  * conditions on fields
  *
- * @link      http://mobile.everybyte.in/
- * @copyright Copyright (c) 2019 W3care
+ * @link      http://milkshake.stidio
+ * @copyright Copyright (c) 2019 Milkshake Studio
  */
 
 namespace craftconditions\conditions\elements;

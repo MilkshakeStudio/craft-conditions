@@ -4,8 +4,8 @@
  *
  * conditions on fields
  *
- * @link      http://mobile.everybyte.in/
- * @copyright Copyright (c) 2019 W3care
+* @link      http://milkshake.stidio
+ * @copyright Copyright (c) 2019 Milkshake Studio
  */
 
 namespace craftconditions\conditions\models;
@@ -23,7 +23,7 @@ use craft\base\Model;
  *
  * https://craftcms.com/docs/plugins/models
  *
- * @author    W3care
+ * @author    Milkshake Studio
  * @package   Conditions
  * @since     1.0.0
  */
@@ -39,7 +39,7 @@ class ConditionalsModel extends Model
      */
     public $someAttribute = 'Some Default';
 	public $fieldLayoutId = 'Some Default';
-	public $conditionals = 'Some Default';
+	public $expressions = 'Some Default';
 
     // Public Methods
     // =========================================================================
@@ -66,7 +66,7 @@ class ConditionalsModel extends Model
         return array(
             'id' => AttributeType::Number,
             'fieldLayoutId' => AttributeType::Number,
-            'conditionals' => AttributeType::Mixed,
+            'expressions' => AttributeType::Mixed,
         );
     }
 	

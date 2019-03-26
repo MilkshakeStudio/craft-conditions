@@ -4,8 +4,8 @@
  *
  * conditions on fields
  *
- * @link      http://mobile.everybyte.in/
- * @copyright Copyright (c) 2019 W3care
+* @link      http://milkshake.stidio
+ * @copyright Copyright (c) 2019 Milkshake Studio
  */
 
 namespace craftconditions\conditions\migrations;
@@ -25,7 +25,7 @@ use craft\db\Migration;
  * If you need to perform any additional actions on install/uninstall, override the
  * safeUp() and safeDown() methods.
  *
- * @author    W3care
+ * @author    Milkshake Studio
  * @package   Conditions
  * @since     1.0.0
  */
@@ -108,13 +108,12 @@ class Install extends Migration
                 [
                     'id' => $this->primaryKey(),
 		    		'fieldLayoutId' =>  $this->integer()->notNull(),
-		    		'conditionals'  =>   $this->text()->notNull(),
+		    		'expressions'  =>   $this->text()->notNull(),
                     'dateCreated' => $this->dateTime()->notNull(),
                     'dateUpdated' => $this->dateTime()->notNull(),
                     'uid' => $this->uid(),
-                    // Custom columns in the table
                     'siteId' => $this->integer()->notNull()->defaultValue(1),
-                  'some_field' => $this->string(255)->notNull()->defaultValue('')
+                    'some_field' => $this->string(255)->notNull()->defaultValue('')
                 ]
             );
         }
