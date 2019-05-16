@@ -1,6 +1,6 @@
 
 
-![Screenshot](resources/img/plugin-logo.png)
+
 
 
 # Conditions plugin for Craft CMS 3.x
