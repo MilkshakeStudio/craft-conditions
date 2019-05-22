@@ -145,17 +145,19 @@ class Conditions extends Plugin
             ),
             __METHOD__
         );
-		if (Craft::$app->getRequest()->getIsAjax()) {
-            $this->ProcessAfterLoad();
-        } else {
+        if(Craft::$app->getRequest()->getIsCpRequest()) {
+            if (Craft::$app->getRequest()->getIsAjax()) {
+                $this->ProcessAfterLoad();
+            } else {
 
-            $this->includeAssets();
-            Craft::$app->view->registerJs('if (window.Craft && window.Craft.ConditionsPlugin) {
-                Craft.ConditionsPlugin.init('.$this->jsonToJs().');
-            }');
-			Event::on(Fields::class, Fields::EVENT_BEFORE_SAVE_FIELD_LAYOUT, function(Event $event) {
-				$this->onSaveConditionalLayout($event);
-			});
+                $this->includeAssets();
+                Craft::$app->view->registerJs('if (window.Craft && window.Craft.ConditionsPlugin) {
+                    Craft.ConditionsPlugin.init('.$this->jsonToJs().');
+                }');
+                Event::on(Fields::class, Fields::EVENT_BEFORE_SAVE_FIELD_LAYOUT, function(Event $event) {
+                    $this->onSaveConditionalLayout($event);
+                });
+            }
         }
     }
 	 /**
